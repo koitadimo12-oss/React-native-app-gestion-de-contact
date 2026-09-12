@@ -1,35 +1,44 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+// configuere les onglets
+import { Tabs } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+export default function configurationonglet(){
+  return(
+    <Tabs>
       <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
+      name="acceuil"
+      options={{
+        title:'Acceuil',
+        tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+      }}
+
       />
+
+
       <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
+      name="contact"
+      options={{
+        title:'Contacts',
+        tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" size={size} color={color} />
+          ),
+      }}
       />
+
+      <Tabs.Screen
+      name="favori"
+      options={{
+        title:'Favoris',
+        tabBarIcon: ({color,size})=>(
+          <Ionicons name="heart" size={size} color={color}/>
+        ),
+      }}
+      />
+      
+
+
     </Tabs>
-  );
+  )
 }
+
