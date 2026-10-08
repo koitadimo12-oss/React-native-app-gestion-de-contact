@@ -1,3 +1,4 @@
+
 import { Stack } from "expo-router";
 import "react-native-reanimated";
 
@@ -8,6 +9,23 @@ export default function RootLayout() {
     <ContactProvider>
       <Stack>
 
+        {/* Page de connexion */}
+        <Stack.Screen
+          name="connexion"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        {/* Page d'inscription */}
+        <Stack.Screen
+          name="inscription"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        {/* Application principale */}
         <Stack.Screen
           name="(tabs)"
           options={{
@@ -15,6 +33,7 @@ export default function RootLayout() {
           }}
         />
 
+        {/* Détail d'un contact */}
         <Stack.Screen
           name="[id]"
           options={{
@@ -22,6 +41,7 @@ export default function RootLayout() {
           }}
         />
 
+        {/* Ajouter / modifier un contact */}
         <Stack.Screen
           name="ajouter"
           options={{
@@ -29,7 +49,20 @@ export default function RootLayout() {
           }}
         />
 
+        {/* Suppression */}
+        <Stack.Screen
+          name="alert"
+          options={{
+            title: "Supprimer",
+          }}
+        />
+          <Stack.Screen
+    name="modifier-profil"
+    options={{ headerShown: false }}
+  />
+
       </Stack>
     </ContactProvider>
   );
 }
+

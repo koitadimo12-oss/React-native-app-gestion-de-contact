@@ -173,6 +173,30 @@ export default function Accueil() {
           </Text>
         </Pressable>
       </View>
+      
+{/*test simple des alert*/}
+
+    {/*<Pressable onPress={()=>router.push("/alert")} style={{
+        width: "100%",
+            backgroundColor: "#38BDF8",
+            paddingVertical: 17,
+            borderRadius: 15,
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+      }}
+      >
+
+      <Text style={{
+        color: "#FFFFFF",
+              fontSize: 17,
+              fontWeight: "bold",
+              marginLeft: 10,
+      }}>
+        Supprimer
+      </Text>
+
+      </Pressable> /*}
 
       {/* Slogan */}
       <View

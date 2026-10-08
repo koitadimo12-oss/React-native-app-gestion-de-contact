@@ -35,7 +35,15 @@ export default function configurationonglet(){
         ),
       }}
       />
-      
+      <Tabs.Screen
+      name="profil"
+      options={{
+        title:'Profil',
+        tabBarIcon: ({color,size})=>(
+        <Ionicons name="person-outline" size={size} color={color} />
+        ),
+      }}
+      />
 
 
     </Tabs>
