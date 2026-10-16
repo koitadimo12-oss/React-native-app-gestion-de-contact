@@ -57,9 +57,31 @@ export default function RootLayout() {
           }}
         />
           <Stack.Screen
-    name="modifier-profil"
+    name="modifierProfil"
     options={{ headerShown: false }}
   />
+   {/* Rappel */}
+        <Stack.Screen
+          name="rappels"
+          options={{
+            title: "Rappel",
+          }}
+        />
+         {/* ajouterRapel */}
+        <Stack.Screen
+          name="ajouterRappel"
+          options={{
+            title: "ajouterRappel",
+          }}
+        />
+        {/*modifieRappel */}
+        <Stack.Screen
+          name="modifierRappel"
+          options={{
+            title: "modierRappel",
+          }}
+        />
+
 
       </Stack>
     </ContactProvider>

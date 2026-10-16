@@ -1,26 +1,97 @@
-import {
-  router,
-  useLocalSearchParams,
-} from "expo-router";
 
 import {
   View,
   Text,
-  Linking,
   Pressable,
-  Alert,
   ScrollView,
+  Linking,
+  Alert,
 } from "react-native";
 
-import {
-  Ionicons,
-  FontAwesome,
-} from "@expo/vector-icons";
-
+import { router, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useContacts } from "../ContactContext";
 
+// Icône correspondant à la catégorie
+function obtenirIconeCategorie(
+  categorie: string | null | undefined
+): keyof typeof Ionicons.glyphMap {
+  switch (categorie?.toLowerCase().trim()) {
+    case "université":
+    case "universite":
+      return "school-outline";
+
+    case "travail":
+      return "briefcase-outline";
+
+    case "famille":
+      return "people-outline";
+
+    case "ami":
+      return "heart-outline";
+
+    case "client":
+      return "business-outline";
+
+    case "autre":
+    default:
+      return "pricetag-outline";
+  }
+}
+
+// Formater le numéro de téléphone
+function formaterTelephone(
+  telephone: string | null | undefined
+): string {
+  if (!telephone) {
+    return "Numéro non disponible";
+  }
+
+  const numero = telephone.replace(/\D/g, "");
+
+  let numeroLocal = numero;
+
+  if (numero.startsWith("221") && numero.length === 12) {
+    numeroLocal = numero.substring(3);
+  }
+
+  if (numeroLocal.length === 9) {
+    return numeroLocal.replace(
+      /^(\d{2})(\d{3})(\d{2})(\d{2})$/,
+      "$1 $2 $3 $4"
+    );
+  }
+
+  return telephone;
+}
+
+// Préparer le numéro pour WhatsApp
+function preparerNumeroWhatsApp(
+  telephone: string | null | undefined
+): string | null {
+  if (!telephone) {
+    return null;
+  }
+
+  let numero = telephone.replace(/\D/g, "");
+
+  if (numero.startsWith("00")) {
+    numero = numero.substring(2);
+  }
+
+  if (numero.length === 9) {
+    numero = "221" + numero;
+  }
+
+  if (numero.length < 10) {
+    return null;
+  }
+
+  return numero;
+}
+
 export default function Idcontact() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
 
   const {
     contacts,
@@ -28,42 +99,181 @@ export default function Idcontact() {
     changerFavori,
   } = useContacts();
 
+  // Rechercher le contact correspondant à l'identifiant
   const contact = contacts.find(
-    (contact) => contact.id === Number(id)
+    (element) => String(element.id) === String(id)
   );
 
+  // Arrêter le rendu si le contact n'existe pas
   if (!contact) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: "#0A3F7A",
-          alignItems: "center",
+          backgroundColor: "#F4F8FC",
           justifyContent: "center",
+          alignItems: "center",
+          padding: 25,
         }}
       >
+        <View
+          style={{
+            width: 90,
+            height: 90,
+            borderRadius: 45,
+            backgroundColor: "#E2EEFA",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
+        >
+          <Ionicons
+            name="person-outline"
+            size={42}
+            color="#0A3F7A"
+          />
+        </View>
+
         <Text
           style={{
-            color: "white",
-            fontSize: 18,
+            fontSize: 22,
+            fontWeight: "bold",
+            color: "#0A3F7A",
+            marginBottom: 10,
+            textAlign: "center",
           }}
         >
           Contact introuvable
         </Text>
+
+        <Text
+          style={{
+            fontSize: 15,
+            color: "#64748B",
+            textAlign: "center",
+            marginBottom: 25,
+          }}
+        >
+          Ce contact n'existe pas ou n'est plus disponible.
+        </Text>
+
+        <Pressable
+          onPress={() => router.replace("/(tabs)/contact")}
+          style={{
+            backgroundColor: "#0A3F7A",
+            paddingVertical: 14,
+            paddingHorizontal: 24,
+            borderRadius: 14,
+          }}
+        >
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 15,
+              fontWeight: "bold",
+            }}
+          >
+            Retour aux contacts
+          </Text>
+        </Pressable>
       </View>
     );
   }
 
-  const numero = contact.telephone.replace(/ /g, "");
+  // À partir d'ici, le contact existe.
+  const contactSelectionne = contact;
 
-  const numeroWhatsApp = `221${numero}`;
+  const nomContact = contactSelectionne.nom || "Sans nom";
 
-  // SUPPRIMER
+  const categorieContact =
+    contactSelectionne.categorie || "Autre";
 
-  const supprimer = () => {
+  const telephoneContact =
+    contactSelectionne.telephone || "";
+
+  const noteContact = contactSelectionne.note || "";
+
+  const iconeCategorie = obtenirIconeCategorie(
+    contactSelectionne.categorie
+  );
+
+  // Appeler le contact
+  async function appelerContact() {
+    if (!telephoneContact) {
+      Alert.alert(
+        "Numéro indisponible",
+        "Ce contact ne possède pas de numéro de téléphone."
+      );
+      return;
+    }
+
+    try {
+      await Linking.openURL(`tel:${telephoneContact}`);
+    } catch {
+      Alert.alert(
+        "Erreur",
+        "Impossible d'ouvrir l'application Téléphone."
+      );
+    }
+  }
+
+  // Ouvrir WhatsApp
+  async function ouvrirWhatsApp() {
+    const numero = preparerNumeroWhatsApp(telephoneContact);
+
+    if (!numero) {
+      Alert.alert(
+        "Numéro invalide",
+        "Vérifie le numéro de téléphone de ce contact."
+      );
+      return;
+    }
+
+    try {
+      await Linking.openURL(`https://wa.me/${numero}`);
+    } catch {
+      Alert.alert(
+        "Erreur",
+        "Impossible d'ouvrir WhatsApp."
+      );
+    }
+  }
+
+  // Ajouter ou retirer des favoris
+  function basculerFavori() {
+    changerFavori(contactSelectionne.id);
+  }
+
+  // Modifier le contact
+  function modifierContact() {
+    router.push({
+      pathname: "/modifier",
+      params: {
+        id: String(contactSelectionne.id),
+      },
+    });
+  }
+
+  // Créer un rappel lié au contact
+  function creerRappel() {
+    router.push({
+      pathname: "/ajouterRappel",
+      params: {
+        contactId: String(contactSelectionne.id),
+      },
+    });
+  }
+
+  // Afficher les rappels
+  function afficherRappels() {
+    router.push("/rappels");
+  }
+
+  // Confirmer la suppression
+  function confirmerSuppression() {
     Alert.alert(
       "Supprimer le contact",
-      `Voulez-vous supprimer ${contact.nom} ?`,
+      `Veux-tu vraiment supprimer ${nomContact} ?`,
       [
         {
           text: "Annuler",
@@ -72,398 +282,376 @@ export default function Idcontact() {
         {
           text: "Supprimer",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await supprimerContact(contact.id);
-
-              router.back();
-            } catch (error) {
-              console.log(
-                "Erreur suppression contact :",
-                error
-              );
-            }
+          onPress: () => {
+            supprimerContact(contactSelectionne.id);
+            router.replace("/(tabs)/contact");
           },
         },
       ]
     );
-  };
-
-  // MODIFIER
-
-  const modifier = () => {
-    router.push({
-      pathname: "/modifier",
-
-      params: {
-        id: String(contact.id),
-        categorie: contact.categorie ?? "",
-        nom: contact.nom,
-        telephone: contact.telephone,
-        note: contact.note ?? "",
-      },
-    });
-  };
-
-  // FAVORI
-
-  const favori = async () => {
-    try {
-      await changerFavori(contact.id);
-    } catch (error) {
-      console.log(
-        "Erreur modification favori :",
-        error
-      );
-    }
-  };
+  }
 
   return (
     <ScrollView
       style={{
         flex: 1,
-        backgroundColor: "#0A3F7A",
+        backgroundColor: "#F4F8FC",
       }}
       contentContainerStyle={{
         paddingBottom: 35,
       }}
+      showsVerticalScrollIndicator={false}
     >
+      {/* En-tête */}
       <View
         style={{
+          backgroundColor: "#0A3F7A",
+          paddingTop: 25,
+          paddingBottom: 35,
           paddingHorizontal: 20,
+          borderBottomLeftRadius: 30,
+          borderBottomRightRadius: 30,
         }}
       >
-        {/* BARRE DU HAUT */}
-
         <View
           style={{
-            marginTop: 45,
             flexDirection: "row",
-            justifyContent: "space-between",
             alignItems: "center",
+            marginBottom: 28,
           }}
         >
-          {/* RETOUR */}
-
           <Pressable
             onPress={() => router.back()}
             style={{
-              width: 45,
-              height: 45,
-              borderRadius: 23,
-              backgroundColor: "#0D4C8F",
-              alignItems: "center",
+              width: 42,
+              height: 42,
+              borderRadius: 14,
+              backgroundColor: "rgba(255,255,255,0.15)",
               justifyContent: "center",
+              alignItems: "center",
             }}
           >
             <Ionicons
               name="arrow-back"
-              size={24}
-              color="white"
+              size={23}
+              color="#FFFFFF"
             />
           </Pressable>
 
-          {/* FAVORI */}
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 19,
+              fontWeight: "bold",
+              marginLeft: 15,
+            }}
+          >
+            Détails du contact
+          </Text>
+
+          <View style={{ flex: 1 }} />
 
           <Pressable
-            onPress={favori}
+            onPress={basculerFavori}
             style={{
-              width: 45,
-              height: 45,
-              borderRadius: 23,
-              backgroundColor: "#0D4C8F",
-              alignItems: "center",
+              width: 42,
+              height: 42,
+              borderRadius: 14,
+              backgroundColor: "rgba(255,255,255,0.15)",
               justifyContent: "center",
+              alignItems: "center",
             }}
           >
             <Ionicons
               name={
-                contact.favori
+                contactSelectionne.favori
                   ? "heart"
                   : "heart-outline"
               }
-              size={26}
-              color="#FF5C70"
+              size={23}
+              color={
+                contactSelectionne.favori
+                  ? "#FF8FA3"
+                  : "#FFFFFF"
+              }
             />
           </Pressable>
         </View>
 
-        {/* IDENTITÉ DU CONTACT */}
-
-        <View
-          style={{
-            alignItems: "center",
-            marginTop: 30,
-            marginBottom: 28,
-          }}
-        >
-          {/* AVATAR */}
-
+        {/* Avatar et identité */}
+        <View style={{ alignItems: "center" }}>
           <View
             style={{
-              width: 105,
-              height: 105,
-              borderRadius: 53,
-              backgroundColor: "#E0F2FE",
-              borderWidth: 4,
-              borderColor: "#38BDF8",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 16,
-            }}
-          >
-            <Text
-              style={{
-                color: "#0A3F7A",
-                fontSize: 42,
-                fontWeight: "bold",
-              }}
-            >
-              {contact.nom
-                .charAt(0)
-                .toUpperCase()}
-            </Text>
-          </View>
-
-          {/* NOM */}
-
-          <Text
-            style={{
-              color: "white",
-              fontSize: 28,
-              fontWeight: "bold",
-              textAlign: "center",
-            }}
-          >
-            {contact.nom}
-          </Text>
-
-          {/* CATÉGORIE */}
-
-          {contact.categorie && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: "#38BDF8",
-                paddingHorizontal: 14,
-                paddingVertical: 7,
-                borderRadius: 20,
-                marginTop: 10,
-              }}
-            >
-              <Ionicons
-                name="pricetag"
-                size={16}
-                color="white"
-              />
-
-              <Text
-                style={{
-                  color: "white",
-                  fontSize: 15,
-                  fontWeight: "bold",
-                  marginLeft: 6,
-                }}
-              >
-                {contact.categorie}
-              </Text>
-            </View>
-          )}
-
-          {/* TÉLÉPHONE */}
-
-          <Text
-            style={{
-              color: "#BFD3E5",
-              fontSize: 17,
-              marginTop: 10,
-            }}
-          >
-            {contact.telephone}
-          </Text>
-        </View>
-
-        {/* APPELER / WHATSAPP */}
-
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 12,
-            marginBottom: 25,
-          }}
-        >
-          {/* APPELER */}
-
-          <Pressable
-            onPress={() =>
-              Linking.openURL(
-                `tel:${contact.telephone}`
-              )
-            }
-            style={{
-              flex: 1,
+              width: 100,
+              height: 100,
+              borderRadius: 50,
               backgroundColor: "#38BDF8",
-              paddingVertical: 16,
-              borderRadius: 16,
+              borderWidth: 4,
+              borderColor: "rgba(255,255,255,0.35)",
+              justifyContent: "center",
               alignItems: "center",
-            }}
-          >
-            <Ionicons
-              name="call"
-              size={25}
-              color="white"
-            />
-
-            <Text
-              style={{
-                color: "white",
-                fontWeight: "bold",
-                marginTop: 5,
-              }}
-            >
-              Appeler
-            </Text>
-          </Pressable>
-
-          {/* WHATSAPP */}
-
-          <Pressable
-            onPress={() =>
-              Linking.openURL(
-                `whatsapp://send?phone=${numeroWhatsApp}`
-              )
-            }
-            style={{
-              flex: 1,
-              backgroundColor: "#25D366",
-              paddingVertical: 16,
-              borderRadius: 16,
-              alignItems: "center",
-            }}
-          >
-            <FontAwesome
-              name="whatsapp"
-              size={26}
-              color="white"
-            />
-
-            <Text
-              style={{
-                color: "white",
-                fontWeight: "bold",
-                marginTop: 5,
-              }}
-            >
-              WhatsApp
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* À PROPOS */}
-
-        {contact.note && (
-          <View
-            style={{
-              backgroundColor: "#0D4C8F",
-              borderRadius: 20,
-              padding: 18,
-              marginBottom: 20,
-            }}
-          >
-            <Text
-              style={{
-                color: "#BFD3E5",
-                fontSize: 13,
-                fontWeight: "bold",
-                marginBottom: 12,
-              }}
-            >
-              À PROPOS
-            </Text>
-
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "flex-start",
-              }}
-            >
-              <Ionicons
-                name="document-text-outline"
-                size={22}
-                color="#38BDF8"
-              />
-
-              <Text
-                style={{
-                  flex: 1,
-                  color: "white",
-                  fontSize: 15,
-                  lineHeight: 23,
-                  marginLeft: 10,
-                }}
-              >
-                {contact.note}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* INFORMATIONS */}
-
-        <View
-          style={{
-            backgroundColor: "#0D4C8F",
-            borderRadius: 20,
-            padding: 18,
-            marginBottom: 20,
-          }}
-        >
-          <Text
-            style={{
-              color: "#BFD3E5",
-              fontSize: 13,
-              fontWeight: "bold",
               marginBottom: 15,
             }}
           >
-            INFORMATIONS
+            <Text
+              style={{
+                fontSize: 40,
+                fontWeight: "bold",
+                color: "#FFFFFF",
+              }}
+            >
+              {nomContact.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              fontSize: 25,
+              fontWeight: "bold",
+              color: "#FFFFFF",
+              textAlign: "center",
+            }}
+          >
+            {nomContact}
           </Text>
 
-          {/* CATÉGORIE */}
-
+          {/* Catégorie et icône */}
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
+              backgroundColor: "rgba(255,255,255,0.15)",
+              paddingHorizontal: 15,
+              paddingVertical: 8,
+              borderRadius: 20,
+              marginTop: 12,
+            }}
+          >
+            <Ionicons
+              name={iconeCategorie}
+              size={18}
+              color="#FFFFFF"
+            />
+
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontSize: 14,
+                fontWeight: "600",
+                marginLeft: 8,
+              }}
+            >
+              {categorieContact}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Actions rapides */}
+      <View
+        style={{
+          flexDirection: "row",
+          paddingHorizontal: 20,
+          marginTop: 20,
+          marginBottom: 25,
+        }}
+      >
+        <Pressable
+          onPress={appelerContact}
+          style={{
+            flex: 1,
+            backgroundColor: "#FFFFFF",
+            borderRadius: 18,
+            paddingVertical: 18,
+            alignItems: "center",
+            marginRight: 8,
+            elevation: 2,
+          }}
+        >
+          <View
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 16,
+              backgroundColor: "#E1F5FE",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 9,
+            }}
+          >
+            <Ionicons
+              name="call-outline"
+              size={25}
+              color="#0284C7"
+            />
+          </View>
+
+          <Text
+            style={{
+              color: "#0A3F7A",
+              fontWeight: "bold",
+              fontSize: 14,
+            }}
+          >
+            Appeler
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={ouvrirWhatsApp}
+          style={{
+            flex: 1,
+            backgroundColor: "#FFFFFF",
+            borderRadius: 18,
+            paddingVertical: 18,
+            alignItems: "center",
+            marginLeft: 8,
+            elevation: 2,
+          }}
+        >
+          <View
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 16,
+              backgroundColor: "#DCFCE7",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 9,
+            }}
+          >
+            <Ionicons
+              name="logo-whatsapp"
+              size={25}
+              color="#16A34A"
+            />
+          </View>
+
+          <Text
+            style={{
+              color: "#0A3F7A",
+              fontWeight: "bold",
+              fontSize: 14,
+            }}
+          >
+            WhatsApp
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* Informations */}
+      <View style={{ paddingHorizontal: 20 }}>
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: "bold",
+            color: "#0A3F7A",
+            marginBottom: 13,
+          }}
+        >
+          Informations
+        </Text>
+
+        <View
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 20,
+            padding: 18,
+            marginBottom: 25,
+            elevation: 2,
+          }}
+        >
+          {/* Téléphone */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 20,
             }}
           >
             <View
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
-                backgroundColor: "#38BDF8",
-                alignItems: "center",
+                width: 45,
+                height: 45,
+                borderRadius: 14,
+                backgroundColor: "#E1F5FE",
                 justifyContent: "center",
+                alignItems: "center",
+                marginRight: 13,
               }}
             >
               <Ionicons
-                name="pricetag"
-                size={20}
-                color="white"
+                name="call-outline"
+                size={22}
+                color="#0284C7"
               />
             </View>
 
-            <View
-              style={{
-                marginLeft: 12,
-              }}
-            >
+            <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  color: "#94A3B8",
-                  fontSize: 12,
+                  color: "#64748B",
+                  fontSize: 13,
+                  marginBottom: 4,
+                }}
+              >
+                Numéro de téléphone
+              </Text>
+
+              <Text
+                style={{
+                  color: "#0A3F7A",
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                {formaterTelephone(
+                  contactSelectionne.telephone
+                )}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={{
+              height: 1,
+              backgroundColor: "#E2E8F0",
+              marginBottom: 20,
+            }}
+          />
+
+          {/* Catégorie */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            <View
+              style={{
+                width: 45,
+                height: 45,
+                borderRadius: 14,
+                backgroundColor: "#EDE9FE",
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 13,
+              }}
+            >
+              <Ionicons
+                name={iconeCategorie}
+                size={22}
+                color="#7C3AED"
+              />
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  color: "#64748B",
+                  fontSize: 13,
+                  marginBottom: 4,
                 }}
               >
                 Catégorie
@@ -471,102 +659,335 @@ export default function Idcontact() {
 
               <Text
                 style={{
-                  color: "white",
+                  color: "#0A3F7A",
                   fontSize: 16,
                   fontWeight: "600",
-                  marginTop: 2,
                 }}
               >
-                {contact.categorie || "Aucune catégorie"}
+                {categorieContact}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={{
+              height: 1,
+              backgroundColor: "#E2E8F0",
+              marginBottom: 20,
+            }}
+          />
+
+          {/* Description */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+            }}
+          >
+            <View
+              style={{
+                width: 45,
+                height: 45,
+                borderRadius: 14,
+                backgroundColor: "#FEF3C7",
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 13,
+              }}
+            >
+              <Ionicons
+                name="document-text-outline"
+                size={22}
+                color="#D97706"
+              />
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  color: "#64748B",
+                  fontSize: 13,
+                  marginBottom: 4,
+                }}
+              >
+                Description
+              </Text>
+
+              <Text
+                style={{
+                  color: noteContact ? "#334155" : "#94A3B8",
+                  fontSize: 15,
+                  lineHeight: 22,
+                }}
+              >
+                {noteContact || "Aucune description ajoutée."}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* ACTIONS */}
+        {/* Rappels */}
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: "bold",
+            color: "#0A3F7A",
+            marginBottom: 13,
+          }}
+        >
+          Rappels
+        </Text>
 
         <View
           style={{
-            backgroundColor: "#0D4C8F",
+            backgroundColor: "#FFFFFF",
             borderRadius: 20,
             padding: 18,
+            marginBottom: 25,
+            elevation: 2,
           }}
         >
-          <Text
+          <View
             style={{
-              color: "#BFD3E5",
-              fontSize: 13,
-              fontWeight: "bold",
+              flexDirection: "row",
+              alignItems: "center",
               marginBottom: 15,
             }}
           >
-            ACTIONS
-          </Text>
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 15,
+                backgroundColor: "#E0F2FE",
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 13,
+              }}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={25}
+                color="#0284C7"
+              />
+            </View>
 
-          {/* MODIFIER */}
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  color: "#0A3F7A",
+                  marginBottom: 4,
+                }}
+              >
+                Ne rien oublier
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: "#64748B",
+                  lineHeight: 19,
+                }}
+              >
+                Crée un rappel associé à ce contact.
+              </Text>
+            </View>
+          </View>
 
           <Pressable
-            onPress={modifier}
+            onPress={creerRappel}
             style={{
-              backgroundColor: "#7077A4",
-              paddingVertical: 15,
-              borderRadius: 14,
+              backgroundColor: "#0A3F7A",
+              paddingVertical: 14,
+              borderRadius: 13,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 12,
+              marginBottom: 10,
+            }}
+          >
+            <Ionicons
+              name="add-circle-outline"
+              size={20}
+              color="#FFFFFF"
+            />
+
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontSize: 15,
+                fontWeight: "bold",
+                marginLeft: 8,
+              }}
+            >
+              Créer un rappel
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={afficherRappels}
+            style={{
+              borderWidth: 1,
+              borderColor: "#BFDBFE",
+              paddingVertical: 13,
+              borderRadius: 13,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons
+              name="calendar-outline"
+              size={20}
+              color="#0A3F7A"
+            />
+
+            <Text
+              style={{
+                color: "#0A3F7A",
+                fontSize: 15,
+                fontWeight: "600",
+                marginLeft: 8,
+              }}
+            >
+              Voir mes rappels
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Gestion du contact */}
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: "bold",
+            color: "#0A3F7A",
+            marginBottom: 13,
+          }}
+        >
+          Gestion du contact
+        </Text>
+
+        <Pressable
+          onPress={modifierContact}
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 16,
+            padding: 17,
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 12,
+            elevation: 1,
+          }}
+        >
+          <View
+            style={{
+              width: 43,
+              height: 43,
+              borderRadius: 13,
+              backgroundColor: "#E0F2FE",
+              justifyContent: "center",
+              alignItems: "center",
+              marginRight: 13,
             }}
           >
             <Ionicons
               name="create-outline"
               size={23}
-              color="white"
+              color="#0284C7"
             />
+          </View>
 
+          <View style={{ flex: 1 }}>
             <Text
               style={{
-                color: "white",
-                fontSize: 16,
+                color: "#0A3F7A",
+                fontSize: 15,
                 fontWeight: "bold",
-                marginLeft: 8,
               }}
             >
               Modifier le contact
             </Text>
-          </Pressable>
 
-          {/* SUPPRIMER */}
+            <Text
+              style={{
+                color: "#64748B",
+                fontSize: 13,
+                marginTop: 4,
+              }}
+            >
+              Modifier ses informations
+            </Text>
+          </View>
 
-          <Pressable
-            onPress={supprimer}
+          <Ionicons
+            name="chevron-forward"
+            size={21}
+            color="#94A3B8"
+          />
+        </Pressable>
+
+        <Pressable
+          onPress={confirmerSuppression}
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 16,
+            padding: 17,
+            flexDirection: "row",
+            alignItems: "center",
+            borderWidth: 1,
+            borderColor: "#FECACA",
+          }}
+        >
+          <View
             style={{
-              backgroundColor: "#8F1915",
-              paddingVertical: 15,
-              borderRadius: 14,
-              flexDirection: "row",
-              alignItems: "center",
+              width: 43,
+              height: 43,
+              borderRadius: 13,
+              backgroundColor: "#FEE2E2",
               justifyContent: "center",
+              alignItems: "center",
+              marginRight: 13,
             }}
           >
             <Ionicons
               name="trash-outline"
               size={23}
-              color="white"
+              color="#DC2626"
             />
+          </View>
 
+          <View style={{ flex: 1 }}>
             <Text
               style={{
-                color: "white",
-                fontSize: 16,
+                color: "#DC2626",
+                fontSize: 15,
                 fontWeight: "bold",
-                marginLeft: 8,
               }}
             >
               Supprimer le contact
             </Text>
-          </Pressable>
-        </View>
+
+            <Text
+              style={{
+                color: "#64748B",
+                fontSize: 13,
+                marginTop: 4,
+              }}
+            >
+              Cette action demande une confirmation
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={21}
+            color="#DC2626"
+          />
+        </Pressable>
       </View>
     </ScrollView>
   );
 }
+
