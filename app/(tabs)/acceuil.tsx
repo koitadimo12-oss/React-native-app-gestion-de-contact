@@ -1,521 +1,503 @@
-
-import { View, Text, Pressable, Image, ScrollView } from "react-native";
-import { router } from "expo-router";
+import React from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
-export default function Accueil() {
+const COULEURS = {
+  fond: "#E8EDF5",
+  primaire: "#17365D",
+  secondaire: "#3978B8",
+  blanc: "#F8FAFD",
+  texte: "#17263C",
+  texteSecondaire: "#68788F",
+  bordure: "#D6DFEB",
+  bleuFond: "#DFEAF8",
+  vert: "#16805D",
+  vertFond: "#DDF5E9",
+};
+
+export default function AccueilScreen() {
+  const router = useRouter();
+
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: "#0A3F7A",
-      }}
-    >
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={COULEURS.fond}
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingHorizontal: 24,
-          paddingTop: 45,
-          paddingBottom: 25,
-        }}
+        contentContainerStyle={styles.contenu}
       >
         {/* En-tête */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 35,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Image
-              source={require("../../assets/images/logoAncontact.png")}
-              style={{
-                width: 48,
-                height: 48,
-                marginRight: 12,
-              }}
-              resizeMode="contain"
+        <View style={styles.header}>
+          <View style={styles.logo}>
+            <Ionicons
+              name="people"
+              size={25}
+              color="#FFFFFF"
             />
-
-            <View>
-              <Text
-                style={{
-                  color: "#FFFFFF",
-                  fontSize: 20,
-                  fontWeight: "bold",
-                }}
-              >
-                An-Contact
-              </Text>
-
-              <Text
-                style={{
-                  color: "#AFC4D8",
-                  fontSize: 12,
-                  marginTop: 3,
-                }}
-              >
-                Vos contacts, toujours proches
-              </Text>
-            </View>
           </View>
 
-          <View
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 21,
-              backgroundColor: "#15518A",
-              alignItems: "center",
-              justifyContent: "center",
-              borderWidth: 1,
-              borderColor: "#2868A0",
-            }}
-          >
-            <Ionicons
-              name="phone-portrait-outline"
-              size={21}
-              color="#38BDF8"
-            />
-          </View>
-        </View>
+          <View style={styles.headerTexte}>
+            <Text style={styles.nomApplication}>
+              An-contact
+            </Text>
 
-        {/* Bloc de bienvenue */}
-        <View
-          style={{
-            marginBottom: 30,
-          }}
-        >
-          <View
-            style={{
-              alignSelf: "flex-start",
-              backgroundColor: "#15518A",
-              paddingHorizontal: 13,
-              paddingVertical: 7,
-              borderRadius: 20,
-              marginBottom: 17,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Ionicons
-              name="sparkles-outline"
-              size={15}
-              color="#38BDF8"
-            />
-
-            <Text
-              style={{
-                color: "#BAE6FD",
-                fontSize: 12,
-                fontWeight: "600",
-                marginLeft: 7,
-              }}
-            >
-              Votre espace personnel
+            <Text style={styles.sousTitre}>
+              Ton carnet de contacts intelligent
             </Text>
           </View>
 
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: 34,
-              fontWeight: "bold",
-              lineHeight: 43,
-              marginBottom: 12,
-            }}
-          >
-            Bienvenue 👋{"\n"}
-            <Text
-              style={{
-                color: "#38BDF8",
-              }}
-            >
-              Restons connectés.
+          <View style={styles.indicateur}>
+            <View style={styles.indicateurPoint} />
+          </View>
+        </View>
+
+        {/* Bienvenue */}
+        <View style={styles.bienvenue}>
+          <View style={styles.bienvenueTexte}>
+            <Text style={styles.bonjour}>
+              Bonjour 👋
             </Text>
-          </Text>
 
-          <Text
-            style={{
-              color: "#C5D7E8",
-              fontSize: 15,
-              lineHeight: 24,
-              maxWidth: 330,
-            }}
-          >
-            Retrouvez vos contacts, gérez vos favoris et programmez vos
-            rappels en toute simplicité.
-          </Text>
-        </View>
+            <Text style={styles.titreBienvenue}>
+              Bienvenue sur An-contact
+            </Text>
 
-        {/* Illustration principale */}
-        <View
-          style={{
-            backgroundColor: "#0D4C8F",
-            borderRadius: 24,
-            padding: 22,
-            marginBottom: 30,
-            borderWidth: 1,
-            borderColor: "#2164A0",
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{
-                flex: 1,
-                paddingRight: 10,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#FFFFFF",
-                  fontSize: 19,
-                  fontWeight: "bold",
-                  marginBottom: 9,
-                }}
-              >
-                Tout au même endroit
-              </Text>
-
-              <Text
-                style={{
-                  color: "#C5D7E8",
-                  fontSize: 13,
-                  lineHeight: 20,
-                }}
-              >
-                Organisez vos contacts et ne manquez plus vos appels
-                importants.
-              </Text>
-            </View>
-
-            <View
-              style={{
-                width: 78,
-                height: 78,
-                borderRadius: 24,
-                backgroundColor: "#155FA8",
-                alignItems: "center",
-                justifyContent: "center",
-                transform: [{ rotate: "-5deg" }],
-              }}
-            >
-              <Ionicons
-                name="people"
-                size={40}
-                color="#38BDF8"
-              />
-            </View>
+            <Text style={styles.descriptionBienvenue}>
+              Retrouve facilement tes contacts et organise
+              tes rappels au quotidien.
+            </Text>
           </View>
 
-          {/* Points forts */}
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              marginTop: 22,
-              paddingTop: 17,
-              borderTopWidth: 1,
-              borderTopColor: "#28639A",
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginRight: 18,
-                marginBottom: 5,
-              }}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={16}
-                color="#38BDF8"
-              />
-
-              <Text
-                style={{
-                  color: "#E2E8F0",
-                  fontSize: 12,
-                  marginLeft: 6,
-                }}
-              >
-                Simple
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginRight: 18,
-                marginBottom: 5,
-              }}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={16}
-                color="#38BDF8"
-              />
-
-              <Text
-                style={{
-                  color: "#E2E8F0",
-                  fontSize: 12,
-                  marginLeft: 6,
-                }}
-              >
-                Pratique
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 5,
-              }}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={16}
-                color="#38BDF8"
-              />
-
-              <Text
-                style={{
-                  color: "#E2E8F0",
-                  fontSize: 12,
-                  marginLeft: 6,
-                }}
-              >
-                Rapide
-              </Text>
-            </View>
+          <View style={styles.illustration}>
+            <Ionicons
+              name="person-circle-outline"
+              size={63}
+              color="#FFFFFF"
+            />
           </View>
         </View>
 
-        {/* Titre des raccourcis */}
-        <View
-          style={{
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: 21,
-              fontWeight: "bold",
-            }}
-          >
-            Que souhaitez-vous faire ?
-          </Text>
+        {/* Section raccourcis */}
+        <View style={styles.sectionEntete}>
+          <View>
+            <Text style={styles.sectionTitre}>
+              Accès rapide
+            </Text>
 
-          <Text
-            style={{
-              color: "#AFC4D8",
-              fontSize: 13,
-              marginTop: 6,
-            }}
-          >
-            Accédez rapidement à vos fonctionnalités.
-          </Text>
+            <Text style={styles.sectionDescription}>
+              Toutes tes fonctionnalités au même endroit.
+            </Text>
+          </View>
         </View>
 
-        {/* Carte Contacts */}
-        <Pressable
-          onPress={() => router.push("/contact")}
-          accessibilityRole="button"
-          accessibilityLabel="Ouvrir mes contacts"
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? "#E0F2FE" : "#FFFFFF",
-            borderRadius: 20,
-            padding: 19,
-            marginBottom: 14,
-            flexDirection: "row",
-            alignItems: "center",
-            transform: [{ scale: pressed ? 0.98 : 1 }],
-          })}
+        {/* Contacts */}
+        <TouchableOpacity
+          style={styles.carteAction}
+          onPress={() => router.push("/(tabs)/contact")}
+          activeOpacity={0.8}
         >
           <View
-            style={{
-              width: 55,
-              height: 55,
-              borderRadius: 17,
-              backgroundColor: "#E0F2FE",
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 15,
-            }}
+            style={[
+              styles.actionIcone,
+              { backgroundColor: COULEURS.bleuFond },
+            ]}
           >
             <Ionicons
               name="people-outline"
-              size={28}
-              color="#0A3F7A"
+              size={25}
+              color={COULEURS.primaire}
             />
           </View>
 
-          <View
-            style={{
-              flex: 1,
-            }}
-          >
-            <Text
-              style={{
-                color: "#0F2F50",
-                fontSize: 17,
-                fontWeight: "bold",
-                marginBottom: 5,
-              }}
-            >
+          <View style={styles.actionTexte}>
+            <Text style={styles.actionTitre}>
               Mes contacts
             </Text>
 
-            <Text
-              style={{
-                color: "#64748B",
-                fontSize: 13,
-                lineHeight: 19,
-              }}
-            >
-              Consulter et gérer mon répertoire
+            <Text style={styles.actionDescription}>
+              Consulte et retrouve tes contacts enregistrés.
             </Text>
           </View>
 
           <Ionicons
-            name="chevron-forward-circle"
-            size={29}
-            color="#0A3F7A"
+            name="chevron-forward"
+            size={20}
+            color={COULEURS.texteSecondaire}
           />
-        </Pressable>
+        </TouchableOpacity>
 
-        {/* Carte Rappels */}
-        <Pressable
-          onPress={() => router.push("/rappels")}
-          accessibilityRole="button"
-          accessibilityLabel="Ouvrir mes rappels"
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? "#124779" : "#0D4C8F",
-            borderRadius: 20,
-            padding: 19,
-            marginBottom: 28,
-            flexDirection: "row",
-            alignItems: "center",
-            borderWidth: 1,
-            borderColor: "#2868A0",
-            transform: [{ scale: pressed ? 0.98 : 1 }],
-          })}
+        {/* Favoris */}
+        <TouchableOpacity
+          style={styles.carteAction}
+          onPress={() => router.push("/(tabs)/favori")}
+          activeOpacity={0.8}
         >
           <View
-            style={{
-              width: 55,
-              height: 55,
-              borderRadius: 17,
-              backgroundColor: "#155FA8",
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 15,
-            }}
+            style={[
+              styles.actionIcone,
+              { backgroundColor: "#FBE5E8" },
+            ]}
+          >
+            <Ionicons
+              name="heart-outline"
+              size={24}
+              color="#C83C4A"
+            />
+          </View>
+
+          <View style={styles.actionTexte}>
+            <Text style={styles.actionTitre}>
+              Mes favoris
+            </Text>
+
+            <Text style={styles.actionDescription}>
+              Accède rapidement aux contacts importants.
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={COULEURS.texteSecondaire}
+          />
+        </TouchableOpacity>
+
+        {/* Rappels */}
+        <TouchableOpacity
+          style={styles.carteAction}
+          onPress={() => router.push("/rappels")}
+          activeOpacity={0.8}
+        >
+          <View
+            style={[
+              styles.actionIcone,
+              { backgroundColor: "#FCEBD5" },
+            ]}
           >
             <Ionicons
               name="notifications-outline"
-              size={28}
-              color="#38BDF8"
+              size={24}
+              color="#B96B16"
             />
           </View>
 
-          <View
-            style={{
-              flex: 1,
-            }}
-          >
-            <Text
-              style={{
-                color: "#FFFFFF",
-                fontSize: 17,
-                fontWeight: "bold",
-                marginBottom: 5,
-              }}
-            >
+          <View style={styles.actionTexte}>
+            <Text style={styles.actionTitre}>
               Mes rappels
             </Text>
 
-            <Text
-              style={{
-                color: "#C5D7E8",
-                fontSize: 13,
-                lineHeight: 19,
-              }}
-            >
-              Programmer mes prochains appels
+            <Text style={styles.actionDescription}>
+              Planifie tes appels et tes suivis importants.
             </Text>
           </View>
 
           <Ionicons
-            name="chevron-forward-circle"
-            size={29}
-            color="#38BDF8"
+            name="chevron-forward"
+            size={20}
+            color={COULEURS.texteSecondaire}
           />
-        </Pressable>
+        </TouchableOpacity>
 
-        {/* Pied de page */}
-        <View
-          style={{
-            alignItems: "center",
-            paddingTop: 18,
-            borderTopWidth: 1,
-            borderTopColor: "#1A5288",
-          }}
+        {/* Ajouter un contact */}
+        <TouchableOpacity
+          style={styles.boutonAjouter}
+          onPress={() => router.push("/ajouter")}
+          activeOpacity={0.85}
         >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 7,
-            }}
-          >
-            <Ionicons
-              name="heart"
-              size={13}
-              color="#38BDF8"
-            />
+          <Ionicons
+            name="person-add-outline"
+            size={20}
+            color="#FFFFFF"
+          />
 
-            <Text
-              style={{
-                color: "#AFC4D8",
-                fontSize: 12,
-                marginLeft: 6,
-              }}
-            >
-              Simple • Rapide • Pratique
-            </Text>
+          <Text style={styles.boutonAjouterTexte}>
+            Ajouter un contact
+          </Text>
+
+          <Ionicons
+            name="arrow-forward"
+            size={18}
+            color="#FFFFFF"
+          />
+        </TouchableOpacity>
+
+        {/* Conseil */}
+        <View style={styles.conseil}>
+          <View style={styles.conseilIcone}>
+            <Ionicons
+              name="bulb-outline"
+              size={21}
+              color={COULEURS.primaire}
+            />
           </View>
 
-          <Text
-            style={{
-              color: "#7897B5",
-              fontSize: 11,
-            }}
-          >
-            An-Contact © 2026
+          <View style={styles.conseilTexte}>
+            <Text style={styles.conseilTitre}>
+              Petit conseil
+            </Text>
+
+            <Text style={styles.conseilDescription}>
+              Ajoute tes contacts importants aux favoris
+              pour les retrouver plus rapidement.
+            </Text>
+          </View>
+        </View>
+
+        {/* Pied de page */}
+        <View style={styles.footer}>
+          <Ionicons
+            name="shield-checkmark-outline"
+            size={15}
+            color={COULEURS.texteSecondaire}
+          />
+
+          <Text style={styles.footerTexte}>
+            An-contact · Tes contacts, simplement.
           </Text>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COULEURS.fond,
+  },
+
+  contenu: {
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 30,
+  },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 23,
+  },
+
+  logo: {
+    width: 45,
+    height: 45,
+    borderRadius: 14,
+    backgroundColor: COULEURS.primaire,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  headerTexte: {
+    flex: 1,
+    marginLeft: 11,
+  },
+
+  nomApplication: {
+    color: COULEURS.primaire,
+    fontSize: 19,
+    fontWeight: "900",
+  },
+
+  sousTitre: {
+    color: COULEURS.texteSecondaire,
+    fontSize: 10,
+    marginTop: 3,
+  },
+
+  indicateur: {
+    width: 13,
+    height: 13,
+    borderRadius: 7,
+    backgroundColor: COULEURS.vertFond,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  indicateurPoint: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COULEURS.vert,
+  },
+
+  bienvenue: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COULEURS.primaire,
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 26,
+    overflow: "hidden",
+  },
+
+  bienvenueTexte: {
+    flex: 1,
+    paddingRight: 8,
+  },
+
+  bonjour: {
+    color: "#B9D9FF",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 7,
+  },
+
+  titreBienvenue: {
+    color: "#FFFFFF",
+    fontSize: 21,
+    fontWeight: "900",
+    lineHeight: 27,
+  },
+
+  descriptionBienvenue: {
+    color: "#DCE8F7",
+    fontSize: 11,
+    lineHeight: 18,
+    marginTop: 9,
+  },
+
+  illustration: {
+    width: 69,
+    height: 69,
+    borderRadius: 23,
+    backgroundColor: "#2B4B70",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  sectionEntete: {
+    marginBottom: 14,
+  },
+
+  sectionTitre: {
+    color: COULEURS.texte,
+    fontSize: 19,
+    fontWeight: "900",
+  },
+
+  sectionDescription: {
+    color: COULEURS.texteSecondaire,
+    fontSize: 11,
+    marginTop: 5,
+  },
+
+  carteAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COULEURS.blanc,
+    borderWidth: 1,
+    borderColor: COULEURS.bordure,
+    borderRadius: 17,
+    padding: 13,
+    marginBottom: 11,
+  },
+
+  actionIcone: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  actionTexte: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 7,
+  },
+
+  actionTitre: {
+    color: COULEURS.texte,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  actionDescription: {
+    color: COULEURS.texteSecondaire,
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 4,
+  },
+
+  boutonAjouter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: COULEURS.primaire,
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+    borderRadius: 14,
+    marginTop: 5,
+  },
+
+  boutonAjouterTexte: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  conseil: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#E0E9F5",
+    borderRadius: 15,
+    padding: 13,
+    marginTop: 22,
+    borderWidth: 1,
+    borderColor: COULEURS.bordure,
+  },
+
+  conseilIcone: {
+    width: 37,
+    height: 37,
+    borderRadius: 11,
+    backgroundColor: COULEURS.blanc,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  conseilTexte: {
+    flex: 1,
+    marginLeft: 10,
+  },
+
+  conseilTitre: {
+    color: COULEURS.primaire,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  conseilDescription: {
+    color: COULEURS.texteSecondaire,
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 4,
+  },
+
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 23,
+  },
+
+  footerTexte: {
+    color: COULEURS.texteSecondaire,
+    fontSize: 10,
+  },
+});

@@ -26,6 +26,10 @@ import DateTimePicker, {
 
 import { api } from "@/services/api";
 
+import {
+  programmerNotification,
+} from "@/services/notificationService";
+
 export default function ModifierRappelScreen() {
   const router = useRouter();
 
@@ -41,10 +45,13 @@ export default function ModifierRappelScreen() {
   const obtenirParametre = (
     valeur?: string | string[]
   ): string => {
-    return Array.isArray(valeur) ? valeur[0] ?? "" : valeur ?? "";
+    return Array.isArray(valeur)
+      ? valeur[0] ?? ""
+      : valeur ?? "";
   };
 
   const id = Number(obtenirParametre(params.id));
+
   const contactId = obtenirParametre(params.contactId);
   const contactNom = obtenirParametre(params.contactNom);
 
@@ -52,6 +59,7 @@ export default function ModifierRappelScreen() {
   const dateInitiale = obtenirParametre(params.dateHeure);
 
   const [titre, setTitre] = useState(titreInitial);
+
   const [modifierTitre, setModifierTitre] = useState(false);
 
   const [dateHeure, setDateHeure] = useState(() => {
@@ -63,7 +71,9 @@ export default function ModifierRappelScreen() {
   });
 
   const [afficherDate, setAfficherDate] = useState(false);
+
   const [afficherHeure, setAfficherHeure] = useState(false);
+
   const [chargement, setChargement] = useState(false);
 
   // Modifier la date
@@ -119,52 +129,93 @@ export default function ModifierRappelScreen() {
     });
   };
 
-  // Enregistrer les modifications dans le backend
+  // Enregistrer les modifications et programmer la notification
   const enregistrerModifications = async () => {
+    // Vérifier l'identifiant
     if (!Number.isInteger(id) || id <= 0) {
       Alert.alert(
         "Erreur",
         "L'identifiant du rappel est invalide. Retournez à la liste et réessayez."
       );
+
       return;
     }
 
+    // Vérifier le titre
     if (!titre.trim()) {
       Alert.alert(
         "Titre obligatoire",
         "Saisissez le motif de votre rappel."
       );
+
       return;
     }
 
+    // Vérifier la date
     if (dateHeure.getTime() <= Date.now()) {
       Alert.alert(
         "Date ou heure passée",
         "Choisissez une date et une heure dans le futur."
       );
+
       return;
     }
 
     try {
       setChargement(true);
 
+      const titreFinal = titre.trim();
+
+      // 1. Modifier le rappel dans le backend
       const reponse = await api.patch(`/rappels/${id}`, {
-        titre: titre.trim(),
+        titre: titreFinal,
         dateHeure: dateHeure.toISOString(),
       });
 
       console.log("Rappel modifié :", reponse.data);
 
-      Alert.alert(
-        "Modification réussie",
-        "Votre rappel a été modifié avec succès.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]
+      // 2. Programmer la notification à la nouvelle date
+      const notificationId = await programmerNotification(
+        titreFinal,
+        `Il est temps de contacter ${
+          contactNom || "votre contact"
+        }.`,
+        dateHeure
       );
+
+      // 3. Vérifier si la notification a été programmée
+      if (notificationId) {
+        console.log(
+          "Notification du rappel modifié programmée :",
+          notificationId
+        );
+
+        Alert.alert(
+          "Modification réussie",
+          "Votre rappel a été modifié et une nouvelle notification a été programmée.",
+          [
+            {
+              text: "OK",
+              onPress: () => router.back(),
+            },
+          ]
+        );
+      } else {
+        console.warn(
+          "Le rappel est modifié, mais la notification n'a pas été programmée."
+        );
+
+        Alert.alert(
+          "Rappel modifié",
+          "La modification a été enregistrée, mais la notification n'a pas pu être programmée. Vérifiez les autorisations de notification de votre téléphone.",
+          [
+            {
+              text: "OK",
+              onPress: () => router.back(),
+            },
+          ]
+        );
+      }
     } catch (error: any) {
       console.error(
         "Erreur modification rappel :",
@@ -186,13 +237,14 @@ export default function ModifierRappelScreen() {
     }
   };
 
-  // Formater la date et l'heure
+  // Formater la date
   const dateFormatee = dateHeure.toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
 
+  // Formater l'heure
   const heureFormatee = dateHeure.toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
@@ -220,7 +272,9 @@ export default function ModifierRappelScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTextContainer}>
-          <Text style={styles.title}>Modifier le rappel</Text>
+          <Text style={styles.title}>
+            Modifier le rappel
+          </Text>
 
           <Text style={styles.subtitle}>
             Modifiez le motif, la date ou l'heure.
@@ -299,6 +353,7 @@ export default function ModifierRappelScreen() {
                     "Titre obligatoire",
                     "Saisissez un motif avant de terminer."
                   );
+
                   return;
                 }
 
@@ -346,7 +401,9 @@ export default function ModifierRappelScreen() {
           Planification
         </Text>
 
-        <Text style={styles.label}>Date du rappel</Text>
+        <Text style={styles.label}>
+          Date du rappel
+        </Text>
 
         <TouchableOpacity
           style={styles.inputContainer}
@@ -377,14 +434,18 @@ export default function ModifierRappelScreen() {
             value={dateHeure}
             mode="date"
             display={
-              Platform.OS === "ios" ? "spinner" : "default"
+              Platform.OS === "ios"
+                ? "spinner"
+                : "default"
             }
             minimumDate={new Date()}
             onChange={choisirDate}
           />
         )}
 
-        <Text style={styles.label}>Heure du rappel</Text>
+        <Text style={styles.label}>
+          Heure du rappel
+        </Text>
 
         <TouchableOpacity
           style={styles.inputContainer}
@@ -416,7 +477,9 @@ export default function ModifierRappelScreen() {
             mode="time"
             is24Hour
             display={
-              Platform.OS === "ios" ? "spinner" : "default"
+              Platform.OS === "ios"
+                ? "spinner"
+                : "default"
             }
             onChange={choisirHeure}
           />

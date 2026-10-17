@@ -74,6 +74,7 @@ export default function RootLayout() {
             title: "ajouterRappel",
           }}
         />
+        
         {/*modifieRappel */}
         <Stack.Screen
           name="modifierRappel"

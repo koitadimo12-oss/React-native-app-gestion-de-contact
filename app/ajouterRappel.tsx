@@ -30,13 +30,13 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 
 import { useContacts } from "@/ContactContext";
+import type { Contact } from "@/ContactContext";
 import { api } from "@/services/api";
-import { Contact } from "@/ContactContext";
+import { programmerNotification } from "@/services/notificationService";
 
 export default function AjouterRappelScreen() {
   const router = useRouter();
 
-  // Récupérer l'ID transmis depuis la fiche du contact
   const { contactId: contactIdParam } = useLocalSearchParams<{
     contactId?: string | string[];
   }>();
@@ -44,7 +44,6 @@ export default function AjouterRappelScreen() {
   const { contacts, chargerContacts } = useContacts();
 
   const [contactId, setContactId] = useState<number | null>(null);
-
   const [titre, setTitre] = useState("Appeler mon contact");
   const [modifierTitre, setModifierTitre] = useState(false);
 
@@ -59,29 +58,24 @@ export default function AjouterRappelScreen() {
   const [chargement, setChargement] = useState(false);
   const [chargementContacts, setChargementContacts] = useState(true);
 
-  // Retrouver le contact sélectionné
   const contactSelectionne = contacts.find(
-    (contact: Contact) => contact.id === contactId
+    (contact: Contact) => Number(contact.id) === contactId
   );
 
-  // Sélection automatique du contact transmis dans l'URL
+  // Sélectionner automatiquement le contact transmis dans l'URL.
   useEffect(() => {
     const parametreId = Array.isArray(contactIdParam)
       ? contactIdParam[0]
       : contactIdParam;
 
-    if (!parametreId) {
-      return;
-    }
+    if (!parametreId) return;
 
     const id = Number(parametreId);
 
-    if (!Number.isInteger(id) || id <= 0) {
-      return;
-    }
+    if (!Number.isInteger(id) || id <= 0) return;
 
     const contactExiste = contacts.some(
-      (contact: Contact) => contact.id === id
+      (contact: Contact) => Number(contact.id) === id
     );
 
     if (contactExiste) {
@@ -89,7 +83,7 @@ export default function AjouterRappelScreen() {
     }
   }, [contactIdParam, contacts]);
 
-  // Charger les contacts à chaque ouverture de l'écran
+  // Charger les contacts à chaque ouverture de l'écran.
   useFocusEffect(
     useCallback(() => {
       let actif = true;
@@ -99,10 +93,7 @@ export default function AjouterRappelScreen() {
           setChargementContacts(true);
           await chargerContacts();
         } catch (error) {
-          console.error(
-            "Erreur chargement contacts :",
-            error
-          );
+          console.error("Erreur chargement contacts :", error);
 
           if (actif) {
             Alert.alert(
@@ -117,7 +108,7 @@ export default function AjouterRappelScreen() {
         }
       };
 
-      charger();
+      void charger();
 
       return () => {
         actif = false;
@@ -125,7 +116,7 @@ export default function AjouterRappelScreen() {
     }, [chargerContacts])
   );
 
-  // Modifier la date
+  // Choisir la date du rappel.
   const choisirDate = (
     evenement: DateTimePickerEvent,
     nouvelleDate?: Date
@@ -151,7 +142,7 @@ export default function AjouterRappelScreen() {
     });
   };
 
-  // Modifier l'heure
+  // Choisir l'heure du rappel.
   const choisirHeure = (
     evenement: DateTimePickerEvent,
     nouvelleDate?: Date
@@ -178,17 +169,21 @@ export default function AjouterRappelScreen() {
     });
   };
 
-  // Enregistrer le rappel dans le backend
+  // Enregistrer le rappel puis programmer sa notification locale.
   const enregistrerRappel = async () => {
+    if (chargement) return;
+
     if (!contactSelectionne) {
       Alert.alert(
         "Contact obligatoire",
-        "Sélectionnez un contact avant de continuer."
+        "Sélectionnez un contact enregistré avant de continuer."
       );
       return;
     }
 
-    if (!titre.trim()) {
+    const titreFinal = titre.trim();
+
+    if (!titreFinal) {
       Alert.alert(
         "Titre obligatoire",
         "Saisissez le motif de votre rappel."
@@ -207,17 +202,81 @@ export default function AjouterRappelScreen() {
     try {
       setChargement(true);
 
+      // 1. Enregistrer le rappel dans le backend.
       const reponse = await api.post("/rappels", {
         contactId: contactSelectionne.id,
-        titre: titre.trim(),
+        titre: titreFinal,
         dateHeure: dateHeure.toISOString(),
       });
 
       console.log("Rappel créé :", reponse.data);
 
+      // 2. Programmer la notification sur le téléphone.
+      let identifiantNotification: string | null = null;
+
+      try {
+        console.log("========== TEST RAPPEL ==========");
+        console.log("Titre :", titreFinal);
+        console.log("Contact :", contactSelectionne.nom);
+        console.log("Date choisie :", dateHeure.toString());
+        console.log("Date ISO :", dateHeure.toISOString());
+        console.log("Heure actuelle :", new Date().toString());
+        console.log(
+          "Délai avant notification (secondes) :",
+          Math.round(
+            (dateHeure.getTime() - Date.now()) / 1000
+          )
+        );
+
+        identifiantNotification = await programmerNotification(
+          titreFinal,
+          `Il est temps de contacter ${contactSelectionne.nom}.`,
+          dateHeure
+        );
+
+        if (identifiantNotification) {
+          console.log(
+            "NOTIFICATION DU RAPPEL PROGRAMMÉE :",
+            identifiantNotification
+          );
+        } else {
+          console.warn(
+            "Le rappel est enregistré, mais la notification n'a pas été programmée."
+          );
+        }
+
+        console.log("=================================");
+      } catch (erreurNotification) {
+        console.error(
+          "Erreur de programmation de la notification :",
+          erreurNotification
+        );
+      }
+
+      // 3. Préparer la confirmation.
+      const dateAffichee = dateHeure.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+
+      const heureAffichee = dateHeure.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const notificationProgrammee =
+        identifiantNotification !== null;
+
+      const message = notificationProgrammee
+        ? `Ton rappel pour ${contactSelectionne.nom} est enregistré.\n\nUne notification locale est programmée pour le ${dateAffichee} à ${heureAffichee}.`
+        : `Ton rappel pour ${contactSelectionne.nom} est enregistré pour le ${dateAffichee} à ${heureAffichee}.\n\nCependant, la notification locale n'a pas pu être programmée. Vérifie les autorisations de notification de ton téléphone.`;
+
       Alert.alert(
-        "Rappel enregistré",
-        `Le rappel pour ${contactSelectionne.nom} a été enregistré avec succès.`,
+        notificationProgrammee
+          ? "Rappel enregistré"
+          : "Rappel enregistré sans notification",
+        message,
         [
           {
             text: "OK",
@@ -231,14 +290,14 @@ export default function AjouterRappelScreen() {
         error.response?.data || error.message
       );
 
-      const message = error.response?.data?.message;
+      const messageErreur = error.response?.data?.message;
 
       Alert.alert(
         "Erreur",
-        Array.isArray(message)
-          ? message.join("\n")
-          : typeof message === "string"
-            ? message
+        Array.isArray(messageErreur)
+          ? messageErreur.join("\n")
+          : typeof messageErreur === "string"
+            ? messageErreur
             : "Impossible d'enregistrer le rappel. Vérifiez votre connexion et réessayez."
       );
     } finally {
@@ -246,7 +305,6 @@ export default function AjouterRappelScreen() {
     }
   };
 
-  // Formater la date et l'heure
   const dateFormatee = dateHeure.toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "long",
@@ -264,8 +322,6 @@ export default function AjouterRappelScreen() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      {/* EN-TÊTE */}
-
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -281,14 +337,11 @@ export default function AjouterRappelScreen() {
 
         <View style={styles.headerTextContainer}>
           <Text style={styles.title}>Nouveau rappel</Text>
-
           <Text style={styles.subtitle}>
             Programmez votre prochain appel.
           </Text>
         </View>
       </View>
-
-      {/* ILLUSTRATION */}
 
       <View style={styles.illustration}>
         <Ionicons
@@ -299,8 +352,6 @@ export default function AjouterRappelScreen() {
       </View>
 
       <View style={styles.formCard}>
-        {/* CONTACT */}
-
         <Text style={styles.sectionTitle}>
           Informations du contact
         </Text>
@@ -310,7 +361,6 @@ export default function AjouterRappelScreen() {
         {chargementContacts ? (
           <View style={styles.loadingContacts}>
             <ActivityIndicator color="#0A3F7A" />
-
             <Text style={styles.helperText}>
               Chargement des contacts...
             </Text>
@@ -320,7 +370,6 @@ export default function AjouterRappelScreen() {
             <Text style={styles.emptyText}>
               Aucun contact disponible.
             </Text>
-
             <Text style={styles.helperText}>
               Ajoutez d'abord un contact dans votre application.
             </Text>
@@ -328,7 +377,8 @@ export default function AjouterRappelScreen() {
         ) : (
           <View style={styles.contactsList}>
             {contacts.map((contact: Contact) => {
-              const selectionne = contact.id === contactId;
+              const selectionne =
+                Number(contact.id) === contactId;
 
               return (
                 <TouchableOpacity
@@ -337,7 +387,7 @@ export default function AjouterRappelScreen() {
                     styles.contactItem,
                     selectionne && styles.contactItemSelected,
                   ]}
-                  onPress={() => setContactId(contact.id)}
+                  onPress={() => setContactId(Number(contact.id))}
                   activeOpacity={0.8}
                 >
                   <View style={styles.contactIcon}>
@@ -352,7 +402,6 @@ export default function AjouterRappelScreen() {
                     <Text style={styles.contactName}>
                       {contact.nom}
                     </Text>
-
                     <Text style={styles.contactPhone}>
                       {contact.telephone}
                     </Text>
@@ -382,7 +431,6 @@ export default function AjouterRappelScreen() {
               size={20}
               color="#0284C7"
             />
-
             <Text style={styles.selectedContactText}>
               Contact sélectionné : {contactSelectionne.nom}
             </Text>
@@ -390,8 +438,6 @@ export default function AjouterRappelScreen() {
         )}
 
         <View style={styles.separator} />
-
-        {/* MOTIF */}
 
         <Text style={styles.sectionTitle}>
           Motif du rappel
@@ -438,7 +484,6 @@ export default function AjouterRappelScreen() {
               size={21}
               color="#64748B"
             />
-
             <Text style={styles.titleValue}>{titre}</Text>
           </View>
         )}
@@ -456,11 +501,7 @@ export default function AjouterRappelScreen() {
 
         <View style={styles.separator} />
 
-        {/* PLANIFICATION */}
-
-        <Text style={styles.sectionTitle}>
-          Planification
-        </Text>
+        <Text style={styles.sectionTitle}>Planification</Text>
 
         <Text style={styles.label}>Date du rappel</Text>
 
@@ -476,11 +517,9 @@ export default function AjouterRappelScreen() {
             size={21}
             color="#64748B"
           />
-
           <Text style={styles.pickerValue}>
             {dateFormatee}
           </Text>
-
           <Ionicons
             name="chevron-down"
             size={20}
@@ -514,11 +553,9 @@ export default function AjouterRappelScreen() {
             size={21}
             color="#64748B"
           />
-
           <Text style={styles.pickerValue}>
             {heureFormatee}
           </Text>
-
           <Ionicons
             name="chevron-down"
             size={20}
@@ -541,8 +578,6 @@ export default function AjouterRappelScreen() {
         <Text style={styles.helperText}>
           Choisissez une date et une heure futures.
         </Text>
-
-        {/* ENREGISTRER */}
 
         <TouchableOpacity
           style={[
@@ -570,21 +605,15 @@ export default function AjouterRappelScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* ANNULER */}
-
         <TouchableOpacity
           style={styles.cancelButton}
           onPress={() => router.back()}
           disabled={chargement}
           activeOpacity={0.8}
         >
-          <Text style={styles.cancelButtonText}>
-            Annuler
-          </Text>
+          <Text style={styles.cancelButtonText}>Annuler</Text>
         </TouchableOpacity>
       </View>
-
-      {/* INFORMATION */}
 
       <View style={styles.infoBox}>
         <Ionicons
@@ -592,10 +621,10 @@ export default function AjouterRappelScreen() {
           size={22}
           color="#0284C7"
         />
-
         <Text style={styles.infoText}>
-          Le rappel sera enregistré sur votre compte. Les notifications
-          locales seront configurées dans une prochaine étape.
+          Votre rappel sera enregistré sur votre compte. Une
+          notification locale sera programmée pour vous prévenir
+          à la date et à l'heure choisies.
         </Text>
       </View>
     </ScrollView>
@@ -607,19 +636,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F4F8FC",
   },
-
   content: {
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 35,
   },
-
   header: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 25,
   },
-
   backButton: {
     width: 45,
     height: 45,
@@ -630,24 +656,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2EAF2",
   },
-
   headerTextContainer: {
     flex: 1,
     marginLeft: 14,
   },
-
   title: {
     color: "#0A3F7A",
     fontSize: 25,
     fontWeight: "bold",
   },
-
   subtitle: {
     color: "#64748B",
     fontSize: 13,
     marginTop: 5,
   },
-
   illustration: {
     width: 82,
     height: 82,
@@ -658,7 +680,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 25,
   },
-
   formCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
@@ -666,14 +687,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2EAF2",
   },
-
   sectionTitle: {
     fontSize: 17,
     fontWeight: "bold",
     color: "#0A3F7A",
     marginBottom: 18,
   },
-
   label: {
     fontSize: 14,
     fontWeight: "600",
@@ -681,7 +700,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 15,
   },
-
   inputContainer: {
     minHeight: 52,
     flexDirection: "row",
@@ -693,14 +711,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAFCFF",
     gap: 10,
   },
-
   titleValue: {
     flex: 1,
     color: "#0F172A",
     fontSize: 15,
     paddingVertical: 12,
   },
-
   titleEditor: {
     flexDirection: "row",
     alignItems: "center",
@@ -710,29 +726,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAFCFF",
     paddingHorizontal: 12,
   },
-
   titleInput: {
     flex: 1,
     color: "#0F172A",
     fontSize: 15,
     paddingVertical: 12,
   },
-
   editorButton: {
     padding: 5,
   },
-
   pickerValue: {
     flex: 1,
     color: "#0F172A",
     fontSize: 15,
     paddingVertical: 12,
   },
-
   contactsList: {
     gap: 10,
   },
-
   contactItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -743,12 +754,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAFCFF",
     gap: 10,
   },
-
   contactItemSelected: {
     borderColor: "#0284C7",
     backgroundColor: "#EAF7FF",
   },
-
   contactIcon: {
     width: 40,
     height: 40,
@@ -757,77 +766,64 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   contactInfo: {
     flex: 1,
   },
-
   contactName: {
     color: "#0A3F7A",
     fontSize: 15,
     fontWeight: "700",
   },
-
   contactPhone: {
     color: "#64748B",
     fontSize: 13,
     marginTop: 4,
   },
-
   selectedContact: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     marginTop: 12,
   },
-
   selectedContactText: {
     flex: 1,
     color: "#075985",
     fontSize: 13,
   },
-
   loadingContacts: {
     alignItems: "center",
     padding: 20,
     gap: 10,
   },
-
   emptyContacts: {
     padding: 15,
     borderRadius: 12,
     backgroundColor: "#F8FAFC",
   },
-
   emptyText: {
     color: "#334155",
     fontSize: 14,
     fontWeight: "600",
   },
-
   helperText: {
     color: "#64748B",
     fontSize: 12,
     marginTop: 6,
   },
-
   separator: {
     height: 1,
     backgroundColor: "#E2EAF2",
     marginVertical: 25,
   },
-
   changeTitleButton: {
     alignSelf: "flex-start",
     paddingVertical: 8,
   },
-
   changeTitleText: {
     color: "#0284C7",
     fontSize: 13,
     fontWeight: "600",
   },
-
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -838,30 +834,25 @@ const styles = StyleSheet.create({
     marginTop: 28,
     gap: 10,
   },
-
   disabledButton: {
     opacity: 0.65,
   },
-
   saveButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
   },
-
   cancelButton: {
     minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
   },
-
   cancelButtonText: {
     color: "#64748B",
     fontSize: 15,
     fontWeight: "600",
   },
-
   infoBox: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -871,7 +862,6 @@ const styles = StyleSheet.create({
     marginTop: 18,
     gap: 10,
   },
-
   infoText: {
     flex: 1,
     color: "#075985",
